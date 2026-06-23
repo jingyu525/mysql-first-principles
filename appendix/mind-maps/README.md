@@ -152,7 +152,7 @@ mindmap
         否则生成rowid
       物理有序
     二级索引
-      "叶子存: 索引列+PK"
+      "叶子存索引列和主键值"
       为什么不存完整数据
         避免空间爆炸
         保持数据一致性
@@ -175,17 +175,17 @@ mindmap
       范围查询 右边失效
     索引失效
       函数运算
-        "WHERE YEAR(created)=2024"
+        对列使用函数导致索引失效
       隐式类型转换
-        "WHERE phone=13800138000"
+        字符串列用数字查询
       前缀模糊
-        "LIKE '%name'"
+        LIKE前置通配符
       负向查询
         NOT IN NOT EXISTS
       联合索引不满足最左匹配
     设计原则
       服务查询 记住代价
-      "= 条件列放前面"
+      等值条件列放前面
       范围列放后面
 ```
 
@@ -272,7 +272,7 @@ mindmap
     可见性规则
       trx_id < min_trx_id
         可见 已提交
-      "trx_id >= max_trx_id"
+      "trx_id 大于等于 max_trx_id"
         不可见 未来事务
       trx_id in m_ids
         不可见 活跃未提交
@@ -325,7 +325,7 @@ mindmap
         防止插入幻影行
         RR 级别特有
       Next-Key Lock
-        "Record Lock + Gap Lock"
+        Record加Gap锁
         左开右闭区间
         默认加锁算法
     Insert Intention Lock
@@ -451,7 +451,7 @@ mindmap
       刷盘时机
         Commit
         每1秒
-        Redo Log 满 75%
+        Redo Log 满百分之75
     Undo Log
       存储旧值
       构成版本链
