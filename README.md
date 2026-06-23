@@ -102,12 +102,24 @@ InnoDB源码思想
 
 ---
 
+## 两套阅读路径
+
+本教程提供**双视角**学习，可按需选择：
+
+| 路径 | 方式 | 适合 |
+|------|------|------|
+| **推导链视角** | [ch01 → ch02 → ... → ch09](SUMMARY.md)，因果递进 | 第一次系统学习 |
+| **领域视角** | [domains/](domains/README.md)，按功能域横切 | 复习 / 查漏补缺 / 面试准备 |
+
+两者内容互补，不重复：推导链回答"为什么"，领域视角回答"这一块有哪些东西"。
+
 ## 如何使用本教程
 
 1. **按顺序阅读**：每章建立在前一章的基础上
 2. **先理解"为什么"**：每个概念都从它要解决的问题开始推导
 3. **关注推导过程**：数据结构的演变（数组→链表→BST→B树→B+树）比结论更重要
 4. **配合动手实验**：建议在阅读时打开 MySQL 客户端，执行每章的 SQL 示例
+5. **学完后切换视角**：通读一遍后，用 [领域视角](domains/README.md) 做全局回顾
 
 ---
 
@@ -115,18 +127,26 @@ InnoDB源码思想
 
 ```text
 mysql-first-principles/
-├── README.md              ← 你在这里
+├── README.md              ← 你在这里（双视角入口）
 ├── SUMMARY.md             ← 目录索引
 ├── roadmap.md             ← 学习路线图
-├── ch01-worldview/        ← 数据库世界观
-├── ch02-data-structure/   ← 数据结构到 B+树
-├── ch03-storage-engine/   ← 存储引擎
-├── ch04-index/            ← 索引体系
-├── ch05-transaction/      ← 事务与 ACID
-├── ch06-mvcc/             ← MVCC
-├── ch07-lock/             ← 锁
-├── ch08-explain/          ← EXPLAIN
-├── ch09-innodb/           ← InnoDB 内核
+├── ch01-worldview/        ← 推导链视角（纵向：从零到一）
+├── ch02-data-structure/   │
+├── ch03-storage-engine/   │
+├── ch04-index/            │
+├── ch05-transaction/      │
+├── ch06-mvcc/             │
+├── ch07-lock/             │
+├── ch08-explain/          │
+├── ch09-innodb/           ←
+├── domains/               ← 领域视角（横向：按模块俯瞰）
+│   ├── 00-数据库是什么/
+│   ├── 01-存储篇/
+│   ├── 02-事务篇/
+│   ├── 03-并发篇/
+│   ├── 04-SQL执行篇/
+│   ├── 05-InnoDB内核篇/
+│   └── 06-数据库设计哲学/
 └── appendix/              ← 附录（思维导图/配图/练习）
 ```
 
