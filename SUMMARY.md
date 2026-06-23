@@ -143,3 +143,4 @@
 - [思维导图](appendix/mind-maps/)
 - [配图/示意图](appendix/diagrams/)
 - [练习与自测](appendix/exercises/)
+- [架构演化：库表容量增长与架构决策](appendix/architecture-evolution.md)
