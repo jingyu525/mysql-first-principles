@@ -1,4 +1,4 @@
-这个顺序非常好，因为它符合**从“为什么存在”到“如何实现”**的认知路径。
+这个顺序非常好，因为它符合**从"为什么存在"到"如何实现"**的认知路径。
 
 很多 MySQL 教程的问题在于：
 
@@ -996,18 +996,6 @@ MVCC
 InnoDB
 ```
 
-从系统软件视角看，MySQL 不是“SQL工具”，而是一个专门解决 **海量数据存储、检索、一致性和并发控制** 的大型运行时系统。
+从系统软件视角看，MySQL 不是"SQL工具"，而是一个专门解决 **海量数据存储、检索、一致性和并发控制** 的大型运行时系统。
 
-对于你正在学习的 Go Runtime，可以建立一个对应关系：
-
-| Go Runtime | InnoDB            |
-| ---------- | ----------------- |
-| G          | Transaction       |
-| GMP调度      | Lock/MVCC协调       |
-| Heap       | Buffer Pool       |
-| GC         | Purge Thread      |
-| pprof      | EXPLAIN           |
-| Channel    | Lock Wait Queue   |
-| 状态机        | Transaction State |
-
-当你能把 MySQL 看成一个“数据操作系统”时，再去学习 Redo Log、Undo Log、Buffer Pool、Checkpoint，就会形成完整的知识闭环。下一步最应该深入的是 **“磁盘 → Page → Buffer Pool → B+Tree”** 这一条主线，因为这是整个 InnoDB 的物理基础。
+当你能把 MySQL 看成一个"数据操作系统"时，再去学习 Redo Log、Undo Log、Buffer Pool、Checkpoint，就会形成完整的知识闭环。下一步最应该深入的是 **"磁盘 → Page → Buffer Pool → B+Tree"** 这一条主线，因为这是整个 InnoDB 的物理基础。

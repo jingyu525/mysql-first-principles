@@ -212,14 +212,7 @@ InnoDB 其实是**一个管理数据的操作系统**。
 数据结构 → 树 → B树 → B+树 → 索引 → 事务 → MVCC → 锁 → 优化器 → InnoDB
 ```
 
-### Go Runtime ↔ InnoDB 对照表
 
-| Go Runtime | InnoDB |
-|-----------|--------|
-| G | Transaction |
-| GMP 调度 | Lock/MVCC 协调 |
-| Heap | Buffer Pool |
-| GC | Purge Thread |
 | pprof | EXPLAIN |
 | Channel | Lock Wait Queue |
 | 状态机 | Transaction State |

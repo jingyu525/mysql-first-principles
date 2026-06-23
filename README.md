@@ -60,7 +60,7 @@ MySQL
 | 进阶 | 有 SQL 基础的后端 | 理解索引、事务、MVCC 的内部机理 |
 | 高级 | 需要分析慢查询的工程师 | 连接 EXPLAIN → 索引 → Page → IO 的完整链路 |
 
-如果你有 Go Runtime、操作系统、数据结构等背景，本教程中的类比会帮助你更快建立直觉。
+如果你有操作系统、数据结构等背景，本教程中的类比会帮助你更快建立直觉。
 
 ---
 
@@ -99,22 +99,6 @@ InnoDB源码思想
 | [第七章](ch07-lock/README.md) | 锁 | MVCC 还不够怎么办？ |
 | [第八章](ch08-explain/README.md) | EXPLAIN | SQL 到底怎么执行的？ |
 | [第九章](ch09-innodb/README.md) | InnoDB 内核 | 把 MySQL 看成数据操作系统 |
-
----
-
-## 与 Go Runtime 的对应关系
-
-如果你熟悉 Go Runtime，可以建立如下类比：
-
-| Go Runtime | InnoDB |
-|-----------|--------|
-| G | Transaction |
-| GMP 调度 | Lock/MVCC 协调 |
-| Heap | Buffer Pool |
-| GC | Purge Thread |
-| pprof | EXPLAIN |
-| Channel | Lock Wait Queue |
-| 状态机 | Transaction State |
 
 ---
 
