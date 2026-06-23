@@ -152,7 +152,7 @@ mindmap
         否则生成rowid
       物理有序
     二级索引
-      叶子存 索引列+PK
+      "叶子存: 索引列+PK"
       为什么不存完整数据
         避免空间爆炸
         保持数据一致性
@@ -175,17 +175,17 @@ mindmap
       范围查询 右边失效
     索引失效
       函数运算
-        WHERE YEAR(created)=2024
+        "WHERE YEAR(created)=2024"
       隐式类型转换
-        WHERE phone=13800138000
+        "WHERE phone=13800138000"
       前缀模糊
-        LIKE '%name'
+        "LIKE '%name'"
       负向查询
         NOT IN NOT EXISTS
       联合索引不满足最左匹配
     设计原则
       服务查询 记住代价
-      = 条件列放前面
+      "= 条件列放前面"
       范围列放后面
 ```
 
@@ -204,7 +204,7 @@ mindmap
         写日志
         写磁盘
       转账案例
-        A-100 B+100
+        A-100 B加100
         必须全部成功或全部失败
     事务状态机
       BEGIN
@@ -217,7 +217,7 @@ mindmap
       C 一致性
         AID 共同保证
       I 隔离性
-        MVCC + Lock 实现
+        MVCC加Lock实现
       D 持久性
         Redo Log 实现
     Buffer Pool 风险
@@ -272,7 +272,7 @@ mindmap
     可见性规则
       trx_id < min_trx_id
         可见 已提交
-      trx_id >= max_trx_id
+      "trx_id >= max_trx_id"
         不可见 未来事务
       trx_id in m_ids
         不可见 活跃未提交
@@ -285,7 +285,7 @@ mindmap
         事务开始时生成一次 ReadView
         可重复读
         解决幻读
-          MVCC + Gap Lock
+          MVCC加GapLock
     Undo Log 清理
       Purge Thread
       无旧ReadView可见时清除
@@ -309,10 +309,10 @@ mindmap
         少见
     类型
       共享锁 S锁
-        SELECT ... LOCK IN SHARE MODE
+        "SELECT ... LOCK IN SHARE MODE"
       排他锁 X锁
         UPDATE DELETE INSERT
-        SELECT ... FOR UPDATE
+        "SELECT ... FOR UPDATE"
       意向锁 IS IX
         表级
         表锁前的标记
@@ -325,7 +325,7 @@ mindmap
         防止插入幻影行
         RR 级别特有
       Next-Key Lock
-        Record + Gap
+        "Record Lock + Gap Lock"
         左开右闭区间
         默认加锁算法
     Insert Intention Lock
@@ -451,7 +451,7 @@ mindmap
       刷盘时机
         Commit
         每1秒
-        Redo Log 满75%
+        Redo Log 满 75%
     Undo Log
       存储旧值
       构成版本链
@@ -525,7 +525,7 @@ mindmap
       ACID 推导
       Redo Log WAL
       Undo Log
-      Redo+Undo 关系
+      Redo与Undo关系
       事务状态机
     03 并发篇
       MVCC 版本链
