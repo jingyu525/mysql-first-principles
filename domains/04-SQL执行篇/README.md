@@ -129,6 +129,7 @@ SQL执行篇
 
 交叉领域：
   SQL执行 + 索引 → type/rows 背后是聚簇/二级/覆盖索引（见 [存储篇](../01-存储篇/README.md)）
+  SQL执行 + 索引流水线 → WHERE/GROUP BY/ORDER BY 如何串联利用索引（见 [第四章 §4.10](../../ch04-index/README.md#410-wheregroup-byorder-by索引联动的完整流水线)）
   SQL执行 + 并发 → SELECT ... FOR UPDATE 的锁定读（见 [并发篇](../03-并发篇/README.md)）
   SQL执行 + 内核 → Buffer Pool 命中率对查询性能的影响（见 [InnoDB内核篇](../05-InnoDB内核篇/README.md)）
 ```

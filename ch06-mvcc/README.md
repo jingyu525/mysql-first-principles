@@ -137,6 +137,87 @@ roll_pointer ← 指向上一个版本
 查询 → 发现当前版本太新 → 沿 Undo 链回退 → 找到符合快照的版本 → 返回
 ```
 
+### 具体例子走一遍
+
+假设数据经历三次修改：
+
+```text
+trx=100: INSERT balance=1000, COMMIT    → 初始数据
+trx=101: UPDATE balance=900, COMMIT     → 第一次修改
+trx=102: UPDATE balance=800, 还在运行   → 第二次修改，未提交
+```
+
+此时 Undo 链：
+
+```text
+数据页（当前版本）
+  balance = 800
+  trx_id = 102
+  roll_pointer ──┐
+                 ▼
+         Undo（版本2）
+         balance = 900
+         trx_id = 101
+         roll_pointer ──┐
+                        ▼
+                Undo（版本1）
+                balance = 1000
+                trx_id = 100
+```
+
+---
+
+**事务 A（trx_id=103）开始**，创建 Read View：
+
+```text
+活跃事务列表： [102, 103]     ← 102 还没提交
+最小活跃 trx： 102
+```
+
+事务 A 执行 `SELECT balance FROM account WHERE id=1;`：
+
+---
+
+#### 第 1 步：读当前版本
+
+```text
+balance=800, trx_id=102
+```
+
+判断：`trx_id=102` 在活跃列表 `[102, 103]` 里 → **还没提交，太新！跳过**。
+
+沿着 `roll_pointer` 往上走。
+
+---
+
+#### 第 2 步：读 Undo 版本 2
+
+```text
+balance=900, trx_id=101
+```
+
+判断：`trx_id=101` 不在活跃列表里，且 `101 < 最小活跃trx(102)` → **已经提交了，OK！**
+
+---
+
+#### 第 3 步：返回结果
+
+```text
+SELECT 返回 balance = 900
+```
+
+---
+
+### 为什么不是 800，也不是 1000？
+
+```text
+800 → trx=102 未提交，不能读（脏数据）
+1000 → 太老了，101 的修改是合法的
+900 → 恰好是"快照建立时已提交的最新版本" ✅
+```
+
+**关键洞察**：Undo 链上的每个版本都自带 `trx_id`，Read View 像一个过滤器，把"太新"的版本挡在外面，沿链回溯直到找到"快照时刻已存在的"版本。
+
 ---
 
 ## 6.8 隔离级别

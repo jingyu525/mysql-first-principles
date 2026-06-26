@@ -53,7 +53,7 @@ CREATE TABLE user(
 
 ### 为什么必须有主键？
 
-因为 B+Tree 必须排序，总得有个排序依据。如果没定义主键，MySQL 会偷偷创建隐藏主键。
+因为 B+Tree 必须排序（见[第二章 §2.6：B+Tree 必须排序——这是它的"基因"](../ch02-data-structure/README.md#b+tree-必须排序--这是它的基因)），总得有个排序依据。如果没定义主键，MySQL 会偷偷创建隐藏主键。
 
 **经验原则：每张表都要有主键。**
 
@@ -183,6 +183,306 @@ INSERT 时：**写数据 + 更新所有索引**。索引越多，写越慢。
 
 ---
 
+## 4.10 WHERE/GROUP BY/ORDER BY：索引联动的完整流水线
+
+前面各节讲的是索引本身的能力，这一节把它们串起来：
+
+> **一条 SQL 中的 WHERE、GROUP BY、ORDER BY 并不是三个独立的优化点，而是 MySQL 按照固定顺序依次利用索引。**
+
+如果你继续用第一性原理看，会发现它们都在利用 B+Tree 的两个能力：
+
+1. **快速定位（Seek）**
+2. **天然有序（Ordered Scan）**
+
+---
+
+### SQL 的语义执行顺序
+
+例如：
+
+```sql
+SELECT city, COUNT(*)
+FROM user
+WHERE age >= 18
+GROUP BY city
+ORDER BY city;
+```
+
+逻辑执行顺序（SQL 语义）：
+
+```text
+FROM
+    ↓
+WHERE
+    ↓
+GROUP BY
+    ↓
+HAVING
+    ↓
+SELECT
+    ↓
+ORDER BY
+    ↓
+LIMIT
+```
+
+而 **MySQL 利用索引的顺序** 基本围绕这个流程展开：
+
+```text
+① WHERE —— 先利用索引缩小数据
+       ↓
+② GROUP BY —— 再利用索引完成分组
+       ↓
+③ ORDER BY —— 再利用索引完成排序
+       ↓
+④ LIMIT —— 提前停止扫描
+```
+
+一句话：
+
+> **先过滤，再聚合，再排序。前面的步骤如果没有利用索引建立正确的扫描顺序，后面的 GROUP BY 和 ORDER BY 往往也就失去了利用索引有序性的机会。**
+
+---
+
+### 第一阶段：WHERE —— 找数据（Seek）
+
+```sql
+WHERE age = 20
+```
+
+索引 `(age)` 对应的 B+Tree：
+
+```text
+10
+15
+20
+20
+20
+21
+22
+```
+
+数据库：**定位到 20 → 一直扫描**。
+
+WHERE 用的是：**索引的定位能力（Seek）**。
+
+---
+
+### 第二阶段：GROUP BY —— 连续的数据天然是一组
+
+GROUP BY 最怕什么？
+
+```text
+北京
+上海
+北京
+广州
+上海
+```
+
+数据库需要 Hash 或者临时表，不断统计。
+
+如果数据已经变成：
+
+```text
+北京
+北京
+北京
+上海
+上海
+广州
+```
+
+数据库只需要：**北京结束 → 输出 → 上海结束 → 输出**。
+
+根本不用 Hash。
+
+所以 GROUP BY 最喜欢：**数据已经按 GROUP BY 字段排好序**。
+
+例如索引 `(city)`，数据在 B+Tree 里自然就是：
+
+```text
+北京
+北京
+北京
+上海
+上海
+广州
+```
+
+`GROUP BY city` 只需扫描即可。这叫 **Loose Index Scan（松散索引扫描）**，EXPLAIN 中显示 `Using index for group-by`。
+
+---
+
+### 第三阶段：ORDER BY —— 利用已有顺序
+
+如果 GROUP BY 后数据已经是：
+
+```text
+北京
+上海
+广州
+```
+
+而 SQL 是 `ORDER BY city` — 是不是已经有序？直接输出，不用 Filesort。
+
+**但如果排序列和 GROUP BY 不同呢？**
+
+```sql
+GROUP BY city
+ORDER BY COUNT(*)   -- count 是聚合后才算出来的，索引里没有
+```
+
+那就不行了。必须在统计完成之后重新排序。这时 EXPLAIN 就会看到 `Using filesort`。
+
+---
+
+### 一个完整例子
+
+索引：`(city, age)`
+
+```sql
+SELECT city, COUNT(*)
+FROM user
+WHERE city = '北京'
+GROUP BY city
+ORDER BY city;
+```
+
+数据库的执行过程：
+
+```text
+第一步：Seek → 定位到"北京"
+第二步：Ordered Scan → 北京/北京/北京/北京 天然就是一组
+第三步：GROUP BY city → 直接聚合输出
+第四步：ORDER BY city → 已经有序，直接输出
+```
+
+整个过程：**Seek → Scan → Output**。
+
+没有临时表，没有 Filesort。
+
+---
+
+### 为什么 GROUP BY 有时不能利用索引？
+
+索引：`(city, age)`
+
+```sql
+GROUP BY age
+```
+
+索引里的数据：
+
+```text
+北京 18
+北京 20
+北京 25
+上海 18
+上海 20
+```
+
+注意 age 列：
+
+```text
+18
+20
+25
+18
+20
+```
+
+age 并不是连续的。数据库无法"扫描→发现一组结束"，必须 Hash 或临时表。
+
+**所以不能利用索引。**
+
+---
+
+### 联合索引案例
+
+索引：`(city, age, name)`
+
+```sql
+WHERE city = '北京'
+GROUP BY age
+ORDER BY age
+```
+
+执行：
+
+```text
+第一步：Seek → 定位"北京"
+得到：
+    北京 18
+    北京 18
+    北京 20
+    北京 20
+    北京 30
+```
+
+对于"北京"内部，age 已经是连续的。
+
+- GROUP BY age → 不用 Hash
+- ORDER BY age → 不用 Filesort
+
+整个 SQL：**Seek → Group Scan → Output**。
+
+---
+
+### 一个容易踩坑的例子
+
+索引：`(city, age)`
+
+```sql
+SELECT city, age, COUNT(*)
+FROM user
+WHERE age > 20
+GROUP BY city
+ORDER BY city;
+```
+
+很多人以为：GROUP BY city，ORDER BY city，应该能利用索引。
+
+**实际上不能。**
+
+为什么？因为索引第一列是 `city`，而 WHERE 却是 `age > 20`。
+
+数据库无法利用 `(city, age)` 索引快速定位满足 `age > 20` 的记录，只能扫描大量索引甚至回表，再进行过滤。这样进入 GROUP BY 时，数据已经不是按 city 连续读取的效果，通常就需要临时表和额外排序。
+
+**关键原则：前面的步骤如果没有利用索引建立正确的扫描顺序，后面的 GROUP BY 和 ORDER BY 往往也就失去了利用索引有序性的机会。**
+
+---
+
+### 一张完整的流程图
+
+```text
+                SQL
+
+                 │
+                 ▼
+        WHERE（利用索引定位）
+        Seek / Range Scan
+                 │
+                 ▼
+      GROUP BY（利用连续有序）
+     顺序聚合 / Hash / 临时表
+                 │
+                 ▼
+      ORDER BY（利用已有顺序）
+    Index Order / Filesort
+                 │
+                 ▼
+          LIMIT（提前停止扫描）
+```
+
+可以记成一句话：
+
+> **WHERE 决定"从哪里开始读"；GROUP BY 决定"是否可以边读边聚合"；ORDER BY 决定"是否可以按读出的顺序直接输出"；LIMIT 决定"什么时候可以提前停止"。**
+
+这也是 MySQL 优化器在设计索引时最核心的思考顺序：**先过滤（WHERE），再聚合（GROUP BY），最后排序（ORDER BY）**。如果一个联合索引能够同时满足这三个阶段的需求，就可能做到一次索引扫描完成整个查询，避免临时表、额外排序和大量回表。
+
+---
+
 ## 完整知识树
 
 ```text
@@ -200,7 +500,12 @@ INSERT 时：**写数据 + 更新所有索引**。索引越多，写越慢。
 │
 ├── 最左匹配 → 排序规则
 │
-└── 索引失效 → 全表扫描
+├── 索引失效 → 全表扫描
+│
+└── WHERE/GROUP BY/ORDER BY 联动 → 索引流水线
+    ├── WHERE：索引定位（Seek）
+    ├── GROUP BY：连续有序 → 顺序聚合
+    └── ORDER BY：利用已有顺序 → 避免 Filesort
 ```
 
 ---

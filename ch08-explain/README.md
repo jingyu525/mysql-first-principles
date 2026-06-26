@@ -147,10 +147,15 @@ IO 成本 >> CPU 成本
 | 看到 | 想到 |
 |------|------|
 | `Using index` | 覆盖索引 |
+| `Using index for group-by` | GROUP BY 利用索引有序性（[§4.10](../ch04-index/README.md#410-wheregroup-byorder-by索引联动的完整流水线)） |
+| `Using filesort` | 排序无法利用索引 → 额外排序 |
+| `Using temporary` | GROUP BY 无法顺序聚合 → 临时表 |
 | 回表 | 二级索引 → 聚簇索引 |
 | `rows=1000000` | 大量 Page 访问 |
 | `ALL` | 全表扫描 |
 | Lock Wait | 事务与锁 |
+
+> 理解 `Using filesort` 和 `Using temporary` 的根本原因，需要回到索引流水线：[WHERE → GROUP BY → ORDER BY 的联动机制](../ch04-index/README.md#410-wheregroup-byorder-by索引联动的完整流水线)。
 
 ---
 
